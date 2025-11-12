@@ -1,13 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-BulkUploadWorker-175f4dc0-4319-4575-9fec-4e1d36b6c4bb</UserSecretsId>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Confluent.Kafka" Version="2.3.0" />
+		<PackageReference Include="Dapper" Version="2.1.35" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.5" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+		<PackageReference Include="Polly" Version="8.2.1" />
+	</ItemGroup>
+
 </Project>

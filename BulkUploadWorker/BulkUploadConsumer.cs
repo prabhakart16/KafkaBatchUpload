@@ -1,4 +1,4 @@
-using Confluent.Kafka;
+﻿using Confluent.Kafka;
 using Microsoft.Data.SqlClient;
 using Dapper;
 using System.Text.Json;
@@ -80,7 +80,7 @@ public class BulkUploadConsumer : BackgroundService
                     if (consumeResult?.Message != null)
                     {
                         await ProcessMessageAsync(consumeResult, stoppingToken);
-                        
+
                         // Commit offset after successful processing
                         _consumer.Commit(consumeResult);
                         _consumer.StoreOffset(consumeResult);
@@ -110,7 +110,7 @@ public class BulkUploadConsumer : BackgroundService
     }
 
     private async Task ProcessMessageAsync(
-        ConsumeResult<string, string> consumeResult, 
+        ConsumeResult<string, string> consumeResult,
         CancellationToken cancellationToken)
     {
         var startTime = DateTime.UtcNow;
@@ -122,7 +122,7 @@ public class BulkUploadConsumer : BackgroundService
 
             if (message == null)
             {
-                _logger.LogError("Failed to deserialize message from offset {Offset}", 
+                _logger.LogError("Failed to deserialize message from offset {Offset}",
                     consumeResult.Offset.Value);
                 return;
             }
@@ -225,9 +225,7 @@ public class BulkUploadConsumer : BackgroundService
                     @Name AS Name,
                     @Email AS Email,
                     @Amount AS Amount,
-                    @Date AS Date,
-                    @ChunkIndex AS ChunkIndex,
-                    @MessageId AS MessageId
+                    @Date AS Date
             ) AS source
             ON target.Id = source.Id AND target.BatchId = source.BatchId
             WHEN MATCHED THEN
@@ -238,9 +236,9 @@ public class BulkUploadConsumer : BackgroundService
                     Date = source.Date,
                     UpdatedAt = GETUTCDATE()
             WHEN NOT MATCHED THEN
-                INSERT (Id, BatchId, TenantId, Name, Email, Amount, Date, ChunkIndex, MessageId, CreatedAt)
+                INSERT (Id, BatchId, TenantId, Name, Email, Amount, Date, CreatedAt)
                 VALUES (source.Id, source.BatchId, source.TenantId, source.Name, source.Email, 
-                        source.Amount, source.Date, source.ChunkIndex, source.MessageId, GETUTCDATE());";
+                        source.Amount, source.Date, GETUTCDATE());";
 
         var parameters = records.Select(record => new
         {
@@ -250,9 +248,7 @@ public class BulkUploadConsumer : BackgroundService
             Name = record.Name,
             Email = record.Email,
             Amount = record.Amount,
-            Date = DateTime.TryParse(record.Date, out var date) ? date : DateTime.UtcNow,
-            ChunkIndex = message.ChunkIndex,
-            MessageId = message.MessageId
+            Date = DateTime.TryParse(record.Date, out var date) ? date : DateTime.UtcNow
         }).ToList();
 
         var rowsAffected = await connection.ExecuteAsync(sql, parameters, transaction);
@@ -265,7 +261,7 @@ public class BulkUploadConsumer : BackgroundService
     private async Task<bool> IsMessageProcessedAsync(string messageId)
     {
         using var connection = new SqlConnection(_connectionString);
-        
+
         const string sql = @"
             SELECT COUNT(1) 
             FROM ProcessedMessages 
@@ -278,7 +274,7 @@ public class BulkUploadConsumer : BackgroundService
     private async Task MarkMessageProcessedAsync(KafkaMessageDto message)
     {
         using var connection = new SqlConnection(_connectionString);
-        
+
         const string sql = @"
             INSERT INTO ProcessedMessages (MessageId, BatchId, ChunkIndex, ProcessedAt)
             VALUES (@MessageId, @BatchId, @ChunkIndex, GETUTCDATE())";
@@ -306,8 +302,8 @@ public class BulkUploadConsumer : BackgroundService
                 SET Status = 'Processed', ProcessedAt = GETUTCDATE()
                 WHERE BatchId = @BatchId AND ChunkIndex = @ChunkIndex AND Status != 'Processed'";
 
-            await connection.ExecuteAsync(updateChunkSql, 
-                new { BatchId = batchId, ChunkIndex = chunkIndex }, 
+            await connection.ExecuteAsync(updateChunkSql,
+                new { BatchId = batchId, ChunkIndex = chunkIndex },
                 transaction);
 
             // Update batch progress
@@ -332,8 +328,8 @@ public class BulkUploadConsumer : BackgroundService
                     END
                 WHERE BatchId = @BatchId";
 
-            await connection.ExecuteAsync(updateBatchSql, 
-                new { BatchId = batchId }, 
+            await connection.ExecuteAsync(updateBatchSql,
+                new { BatchId = batchId },
                 transaction);
 
             await transaction.CommitAsync();
@@ -350,7 +346,7 @@ public class BulkUploadConsumer : BackgroundService
         try
         {
             using var connection = new SqlConnection(_connectionString);
-            
+
             const string sql = @"
                 INSERT INTO FailedMessages (MessageId, BatchId, ChunkIndex, ErrorMessage, FailedAt, Payload)
                 VALUES (@MessageId, @BatchId, @ChunkIndex, @ErrorMessage, GETUTCDATE(), @Payload)";

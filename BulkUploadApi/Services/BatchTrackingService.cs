@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Dapper;
 using System.Data;
+using BulkUploadApi.Models;
 
 namespace BulkUploadApi.Services;
 
@@ -192,3 +193,6 @@ public class BatchTrackingService : IBatchTrackingService
         }
     }
 }
+
+
+
